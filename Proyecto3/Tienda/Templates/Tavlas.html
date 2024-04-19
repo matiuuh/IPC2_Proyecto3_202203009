@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
 <header class="text-center">
-    <h1>Tienda Virutal</h1>
+    <h1>Tabla</h1>
 </header>
 
 <nav class="navbar" style="background-color: navy;" data-bs-theme="dark">
@@ -43,44 +43,48 @@
       </div>
     </div>
   </nav>
-<section class="text-center">
-    <br><br>
-    <!-- Formulario para cargar archivos de configuración -->
-    <form action="" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="archivo_configuracion" required>
-        <button type="submit" class="btn custom-btn">Cargar Configuración</button>
-    </form>
-    <br><br>
-            <!-- Formulario para cargar archivos de transacciones -->
-        <form action="" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" name="archivo_transacciones" required>
-            <button type="submit" class="btn custom-btn">Cargar Transacciones</button>
-        </form>
-        <br><br>
-        <!-- Formulario para consultar el estado de cuenta -->
-        <form action="" method="get">
-            <input type="text" name="nit_cliente" placeholder="Ingrese NIT del cliente">
-            <button type="submit" class="btn custom-btn">Consultar Estado de Cuenta</button>
-        </form>
-        <br><br>
-        <!-- Formulario para consultar ingresos por banco -->
-        <form action="" method="get">
-            <select name="mes">
-                <option value="01">Enero</option>
-                <option value="02">Febrero</option>
-                <option value="03">Marzo</option>
-                <!-- Añadir más meses según sea necesario -->
-            </select>
-            <button type="submit" class="btn custom-btn">Consultar Ingresos</button>
-        </form>
-        <br><br>
-        <!-- Botón para resetear datos -->
-        <form action="" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn custom-btn">Resetear Datos</button>
-        </form>
-<section> 
+    <!-- Aquí se mostrará la tabla -->
+    <div class="container mt-5">
+        <table id="clientes-table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo Electrónico</th>
+                    <th>NIT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas de la tabla se generarán dinámicamente aquí -->
+                
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Función para cargar los datos de clientes desde el archivo clientes.json
+        function cargarClientesDesdeArchivo() {
+            fetch('clientes.json')
+            .then(response => response.json())
+            .then(data => {
+                // Limpiar el contenido actual de la tabla
+                document.getElementById('clientes-table').getElementsByTagName('tbody')[0].innerHTML = '';
+
+                // Iterar sobre los datos de los clientes y crear filas en la tabla
+                data.forEach(cliente => {
+                    const row = `
+                        <tr>
+                            <td>${cliente.nombre}</td>
+                            <td>${cliente.correo}</td>
+                            <td>${cliente.NIT}</td>
+                        </tr>
+                    `;
+                    document.getElementById('clientes-table').getElementsByTagName('tbody')[0].innerHTML += row;
+                });
+            });
+        }
+
+        // Llamar a la función cargarClientesDesdeArchivo al cargar la página
+        window.onload = cargarClientesDesdeArchivo;
+    </script>
 </body>
 </html>

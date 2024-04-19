@@ -60,7 +60,7 @@ def RecibirFormulario():
     print("correo recibido: ", correo)
     print("NIT recibido: ", NIT)
 
-   # Cargar los datos existentes
+    # Cargar los datos existentes
     clientes = cargar_datos()
 
     # Verificar si el cliente ya existe por su NIT
@@ -80,7 +80,16 @@ def RecibirFormulario():
     guardar_datos(clientes)
 
     return jsonify({"status": "Cliente agregado correctamente"})
-  
 
+#Método para cargar el archivo de configuración
+@app.route('/upload/config', methods=['POST'])
+def upload_config():
+    file = request.files['archivo_configuracion']
+    if file:
+        # Procesar el archivo
+        return {"status": "Archivo procesado correctamente"}, 200
+    else:
+        return {"error": "Error al procesar el archivo"}, 400
+    
 if __name__ == "__main__":
     app.run(port=4700, debug=True)
