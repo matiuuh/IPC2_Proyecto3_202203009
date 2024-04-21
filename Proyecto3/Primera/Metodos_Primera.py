@@ -3,15 +3,6 @@ from flask import Flask, jsonify, render_template, request
 
 app =Flask(__name__)
 
-
-@app.route('/')
-def home():
-    return "Bienvenido al Backend!"
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
 @app.route('/reset', methods=['POST'])
 def resetear():
     # Lógica para resetear la base de datos
@@ -52,3 +43,6 @@ def consulta_ingreso():
     month = request.args.get('mes')
     # Lógica para calcular y devolver los ingresos del mes
     return {"month": month, "income": "income details here"}, 200
+
+if __name__ == '__main__':
+    app.run(port=3100, debug=True)
