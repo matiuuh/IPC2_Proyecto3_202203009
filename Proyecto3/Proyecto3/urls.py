@@ -19,8 +19,6 @@ from django.urls import path, include #importanción para incluir las urls de la
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('Primera/', include('Primera.urls')),
-    path('', include('Tienda.urls')),
+    path('admin/', admin.site.urls), #no se está usando pero tiene cosas que pueden servir
     path('', include('Banca.urls')),
 ]
