@@ -74,10 +74,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'Banca' %}">Banca Virtual</a>
+                        <a class="nav-link" href="{{ url_for('ver_banca') }}">Banca Virtual</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'Tienda' %}">Tienda Virtual</a>
+                        <a class="nav-link" href="{{ url_for('ver_tienda') }}">Tienda Virtual</a>
                     </li>
                 </ul>
             </div>
@@ -89,23 +89,24 @@
         <p>Administra tu tienda y transacciones fácilmente.</p>
 
 <!-- Formulario para cargar archivos de configuración -->
-<form id="form-configuracion" action="/ruta-para-configuracion" method="post" enctype="multipart/form-data">
+<form id="Banca" action="{{ url_for('cargar_configuracion') }}" method="post" enctype="multipart/form-data">
+    {{ csrf_token() }}
     <input type="file" name="archivo_configuracion" required>
-    <button type="submit" class="btn btn-custom">Cargar Configuración</button>
+    <button type="submit" class="btn custom-btn">Cargar Configuración</button>
 </form>
-<br>
 
 <!-- Formulario para cargar archivos de transacciones -->
 <form id="form-transacciones" action="/ruta-para-transacciones" method="post" enctype="multipart/form-data">
-    <input type="file" name="archivo_transacciones" required>
+    {{ csrf_token() }}
+    <input type="file" id="fileinput" accept=".xml"  name="archivo_transacciones" required>
     <button type="submit" class="btn btn-custom">Cargar Transacciones</button>
 </form>
 <br>
 
-<!-- Formulario para consultar el estado de cuenta -->
-<form id="form-estado-cuenta" action="/ruta-para-estado-cuenta" method="get">
-    <input type="text" name="nit_cliente" placeholder="Ingrese NIT del cliente" required>
-    <button type="submit" class="btn btn-custom">Consultar Estado de Cuenta</button>
+<!-- Formulario para consultar estado de cuenta -->
+<form id="form-reset" action="/ruta-para-reset" method="post">
+    {{ csrf_token() }}
+    <button type="submit" class="btn btn-custom">Consultar estado de cuenta</button>
 </form>
 <br>
 

@@ -18,10 +18,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'Banca' %}">Banca Virtual</a>
+                        <a class="nav-link" href="{{ url_for('ver_banca') }}">Banca Virtual</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'Tienda' %}">Tienda Virtual</a>
+                        <a class="nav-link" href="{{ url_for('ver_tienda') }}">Tienda Virtual</a>
                     </li>
                 </ul>
             </div>
@@ -32,25 +32,16 @@
         <h1>Tienda Virtual ITGSA</h1>
         <p>Encuentra tus productos favoritos y paga en línea fácilmente.</p>
 
-        <!-- Aquí puedes añadir las diferentes secciones de tu tienda virtual -->
-        <!-- Por ejemplo, un formulario para buscar productos, un área para productos destacados, etc. -->
-        <!-- También puedes incluir elementos interactivos como carritos de compras, listas de deseos, etc. -->
-
         <!-- Ejemplo de formulario de búsqueda de productos -->
+        <!-- No se requiere CSRF token ya que este formulario usa 'GET' -->
         <form action="/buscar-productos" method="get">
             <input type="search" name="query" placeholder="Buscar productos" required>
             <button type="submit" class="btn btn-custom">Buscar</button>
         </form>
         <br>
 
-        <!-- Aquí podrías listar productos o categorías -->
-        <div>
-            <!-- Imagina que cada div es un producto o categoría -->
-            <div class="producto">
-                <!-- Detalles del producto -->
-            </div>
-            <!-- Repite para cada producto -->
-        </div>
+        <!-- Sección de listado de productos o categorías -->
+        <!-- ... -->
 
     </div>
 
