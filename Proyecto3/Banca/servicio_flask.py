@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree, fromstring
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -195,6 +196,57 @@ def procesar_transac_xml(xml_data):
         'pagos_con_error': pagos_con_error,
     }
 
+#Método para consultar ingresos
+@app.route('/ingresos', methods=['GET'])
+def obtener_ingresos():
+    mes = request.args.get('mes')
+    año = request.args.get('año')
+
+    # Filtrar pagos por mes y año, asumiendo que 'fecha' contiene texto adicional
+    total_ingresos = 0
+    for pago in pagos:
+        # Extraer la fecha y convertirla a un objeto datetime
+        fecha_str = pago['fecha']
+        try:
+            # Intenta extraer la fecha considerando que puede haber texto adicional
+            fecha_str = fecha_str.split()[0]  # Esto asume que la fecha siempre está al principio
+            fecha = datetime.strptime(fecha_str, '%d/%m/%Y')
+            if fecha.month == int(mes) and fecha.year == int(año):
+                total_ingresos += pago['valor']
+        except ValueError as e:
+            # Aquí puedes manejar fechas mal formadas o loggear errores si es necesario
+            pass
+    
+    ingresos = {
+        'Mes': mes,
+        'Año': año,
+        'TotalIngresos': total_ingresos
+    }
+
+    return jsonify(ingresos)
+
+
+#Método para consultar estado de cuenta
+@app.route('/estado-cuenta/<nit_cliente>', methods=['GET'])
+def obtener_estado_cuenta(nit_cliente):
+    # Asumimos que 'transacciones' y 'pagos' son listas de diccionarios que contienen la información de cada uno.
+    # Asumimos también que hay una clave 'NITcliente' en las facturas y los pagos que corresponde al NIT del cliente.
+    transacciones_cliente = [t for t in transacciones if t['NITcliente'] == nit_cliente]
+    pagos_cliente = [p for p in pagos if p['NITcliente'] == nit_cliente]
+
+    saldo = sum(p['valor'] for p in pagos_cliente) - sum(t['valor'] for t in transacciones_cliente)
+
+    estado_cuenta = {
+        'NIT': nit_cliente,
+        'Saldo': saldo,
+        'Transacciones': transacciones_cliente,
+        'Pagos': pagos_cliente
+    }
+
+    return jsonify(estado_cuenta)
+
+
+
 #métodos para testear el programa
 @app.route('/clientes', methods=['GET'])
 def obtener_clientes():
@@ -216,7 +268,13 @@ def obtener_pagos():
     # Suponiendo que `pagos` es una lista global
     return jsonify(pagos)
 
-
+@app.route('/info', methods=['GET'])
+def obtener_info_estudiante():
+    info_estudiante = {
+        'Nombre': 'Mateo Estuardo Diego Noriega',
+        'Carné': '202203009'
+    }
+    return jsonify(info_estudiante)
 
 
 # Rutas adicionales aquí...
