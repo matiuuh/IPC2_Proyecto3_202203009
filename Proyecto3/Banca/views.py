@@ -7,10 +7,18 @@ import requests
 import xml.etree.ElementTree as ET
 from django.core.files.storage import default_storage
 from django.shortcuts import redirect
+import datetime
 
 # Create your views here.
 def ver_banca(request):
-    return render (request, 'Banca.html')
+    current_year = datetime.datetime.now().year
+    years = range(current_year - 10, current_year + 1)  # Últimos 10 años
+    return render(request, 'Banca.html', {'years': years})
+
+def tu_vista(request):
+    current_year = datetime.datetime.now().year
+    years = range(current_year - 10, current_year + 1)  # Últimos 10 años
+    return render(request, 'Banca.html', {'years': years})
 
 @csrf_exempt  # Desactivar CSRF si es necesario
 def cargar_configuracion(request):

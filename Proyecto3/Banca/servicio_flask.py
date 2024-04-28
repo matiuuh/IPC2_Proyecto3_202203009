@@ -6,6 +6,8 @@ from io import BytesIO
 from xml.etree.ElementTree import ElementTree, fromstring
 from datetime import datetime
 import os
+from flask import Flask, jsonify, request, send_file
+from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
 
@@ -14,6 +16,30 @@ clientes = {}
 bancos = {}
 transacciones = []
 pagos = []
+
+def crear_pdf_configuracion(xml_data, filename="configuracion.pdf"):
+    pdf_path = "C:/Users/estua/OneDrive/Documentos/IPC/IPC2_PROYECTO3/Proyecto3" + filename
+    p = canvas.Canvas(pdf_path)
+    p.drawString(100, 800, "Archivo de Configuración")
+    y_position = 780
+    lines = xml_data.decode('utf-8').split('\n')
+    for line in lines:
+        p.drawString(100, y_position, line)
+        y_position -= 12
+    p.save()
+    return pdf_path
+
+def crear_pdf_transaccion(xml_data, filename="transaccion.pdf"):
+    pdf_path = "C:/Users/estua/OneDrive/Documentos/IPC/IPC2_PROYECTO3/Proyecto3" + filename
+    p = canvas.Canvas(pdf_path)
+    p.drawString(100, 800, "Archivo de transacción")
+    y_position = 780
+    lines = xml_data.decode('utf-8').split('\n')
+    for line in lines:
+        p.drawString(100, y_position, line)
+        y_position -= 12
+    p.save()
+    return pdf_path
 
 @app.route('/cargar-configuracion', methods=['POST'])
 def cargar_configuracion():
@@ -28,6 +54,7 @@ def cargar_configuracion():
             xml_data = archivo.read()
             resultado = procesar_config_xml(xml_data)
             ruta_archivo = generar_y_guardar_respuesta_config_xml(resultado)
+            pdf_file_path = crear_pdf_configuracion(xml_data)
             return jsonify({'archivo_guardado': ruta_archivo}), 200
     except Exception as e:
         app.logger.error(f'Error al cargar configuración: {str(e)}')
@@ -52,7 +79,7 @@ def cargar_transacciones():
         # Procesar el archivo XML
         resultado = procesar_transac_xml(xml_data)
         ruta_archivo = generar_y_guardar_respuesta_transac_xml(resultado)
-        
+        pdf_file_path = crear_pdf_transaccion(xml_data)
         return jsonify({'archivo_guardado': ruta_archivo}), 200
     except Exception as e:
         app.logger.error(f'Error al cargar transacciones: {str(e)}')
@@ -274,40 +301,33 @@ def obtener_ingresos():
     mes = request.args.get('mes')
     año = request.args.get('año')
 
-    # Filtrar pagos por mes y año, asumiendo que 'fecha' contiene texto adicional
+    if not mes or not año:
+        return jsonify({'error': 'Ambos mes y año son necesarios para la consulta.'}), 400
+
     total_ingresos = 0
     for pago in pagos:
-        # Extraer la fecha y convertirla a un objeto datetime
-        fecha_str = pago['fecha']
         try:
-            # Intenta extraer la fecha considerando que puede haber texto adicional
-            fecha_str = fecha_str.split()[0]  # Esto asume que la fecha siempre está al principio
-            fecha = datetime.strptime(fecha_str, '%d/%m/%Y')
+            fecha = datetime.strptime(pago['fecha'].split()[0], '%d/%m/%Y')
             if fecha.month == int(mes) and fecha.year == int(año):
                 total_ingresos += pago['valor']
-        except ValueError as e:
-            # Aquí puedes manejar fechas mal formadas o loggear errores si es necesario
-            pass
-    
-    ingresos = {
-        'Mes': mes,
-        'Año': año,
-        'TotalIngresos': total_ingresos
-    }
+        except ValueError:
+            continue  # Ignora este pago si hay un problema con la fecha
 
+    ingresos = {'Mes': mes, 'Año': año, 'TotalIngresos': total_ingresos}
     return jsonify(ingresos)
 
 
 #Método para consultar estado de cuenta
 @app.route('/estado-cuenta/<nit_cliente>', methods=['GET'])
 def obtener_estado_cuenta(nit_cliente):
-    # Asumimos que 'transacciones' y 'pagos' son listas de diccionarios que contienen la información de cada uno.
-    # Asumimos también que hay una clave 'NITcliente' en las facturas y los pagos que corresponde al NIT del cliente.
+    # Filtrando datos relevantes
     transacciones_cliente = [t for t in transacciones if t['NITcliente'] == nit_cliente]
     pagos_cliente = [p for p in pagos if p['NITcliente'] == nit_cliente]
 
+    # Calculando el saldo
     saldo = sum(p['valor'] for p in pagos_cliente) - sum(t['valor'] for t in transacciones_cliente)
 
+    # Preparando datos para devolver
     estado_cuenta = {
         'NIT': nit_cliente,
         'Saldo': saldo,
@@ -315,7 +335,40 @@ def obtener_estado_cuenta(nit_cliente):
         'Pagos': pagos_cliente
     }
 
-    return jsonify(estado_cuenta)
+    # Creación del PDF
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer)
+    p.drawString(100, 800, f"Estado de Cuenta para NIT: {nit_cliente}")
+    p.drawString(100, 780, f"Saldo: ${saldo}")
+
+    y_position = 760
+    p.drawString(100, y_position, "Transacciones:")
+    y_position -= 20
+    for trans in transacciones_cliente:
+        p.drawString(100, y_position, f"Factura: {trans['numeroFactura']} - Valor: ${trans['valor']}")
+        y_position -= 20
+
+    y_position -= 10
+    p.drawString(100, y_position, "Pagos:")
+    y_position -= 20
+    for pago in pagos_cliente:
+        p.drawString(100, y_position, f"Pago: {pago['valor']} - Fecha: {pago['fecha']}")
+        y_position -= 20
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+
+    # Guardar el PDF en el servidor
+    pdf_filename = f"{nit_cliente}_estado_cuenta.pdf"
+    with open(pdf_filename, 'wb') as f:
+        f.write(buffer.getvalue())
+
+    # Opcional: devolver el PDF como descarga directa o devolver JSON con enlace al PDF
+    if 'pdf' in request.args:
+        return send_file(buffer, attachment_filename=pdf_filename, as_attachment=True)
+    else:
+        return jsonify(estado_cuenta)
 
 
 
