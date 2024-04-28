@@ -1,9 +1,11 @@
 # servicio_flask.py
+import json
 from flask import Flask, jsonify, request
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree, fromstring
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
@@ -25,8 +27,8 @@ def cargar_configuracion():
         if archivo:
             xml_data = archivo.read()
             resultado = procesar_config_xml(xml_data)
-            respuesta_xml = generar_respuesta_config_xml(resultado)
-            return respuesta_xml, 200, {'Content-Type': 'application/xml'}
+            ruta_archivo = generar_y_guardar_respuesta_config_xml(resultado)
+            return jsonify({'archivo_guardado': ruta_archivo}), 200
     except Exception as e:
         app.logger.error(f'Error al cargar configuración: {str(e)}')
         return jsonify({'error': str(e)}), 500
@@ -39,18 +41,6 @@ def cargar_transacciones():
     print(transacciones)  # Ver los datos de transacciones después de procesar
     respuesta_xml = generar_respuesta_transac_xml(resultado)
     return respuesta_xml, 200, {'Content-Type': 'application/xml'}
-
-def generar_respuesta_config_xml(resultado):
-    respuesta = ET.Element('respuesta')
-    clientes = ET.SubElement(respuesta, 'clientes')
-    ET.SubElement(clientes, 'creados').text = str(resultado['clientes_creados'])
-    ET.SubElement(clientes, 'actualizados').text = str(resultado['clientes_actualizados'])
-    
-    bancos = ET.SubElement(respuesta, 'bancos')
-    ET.SubElement(bancos, 'creados').text = str(resultado['bancos_creados'])
-    ET.SubElement(bancos, 'actualizados').text = str(resultado['bancos_actualizados'])
-
-    return ET.tostring(respuesta, encoding='utf8', method='xml').decode('utf8')
 
 def generar_respuesta_transac_xml(resultado):
     respuesta = ET.Element('transacciones')
@@ -66,6 +56,37 @@ def generar_respuesta_transac_xml(resultado):
 
     return ET.tostring(respuesta, encoding='utf8', method='xml').decode('utf8')
 
+#método para generar el archivo respuesta de config
+def generar_y_guardar_respuesta_config_xml(resultado, filename="respuesta_configuracion.xml"):
+    # Crear el elemento raíz XML
+    respuesta = ET.Element('respuesta')
+
+    # Agregar subelementos para clientes
+    clientes = ET.SubElement(respuesta, 'clientes')
+    ET.SubElement(clientes, 'creados').text = str(resultado['clientes_creados'])
+    ET.SubElement(clientes, 'actualizados').text = str(resultado['clientes_actualizados'])
+    
+    # Agregar subelementos para bancos
+    bancos = ET.SubElement(respuesta, 'bancos')
+    ET.SubElement(bancos, 'creados').text = str(resultado['bancos_creados'])
+    ET.SubElement(bancos, 'actualizados').text = str(resultado['bancos_actualizados'])
+
+    # Convertir el árbol XML a una cadena
+    xml_str = ET.tostring(respuesta, encoding='utf8', method='xml').decode('utf8')
+
+    # Definir la ruta donde se guardará el archivo
+    directorio_respuestas = "C:/Users/estua/OneDrive/Documentos/IPC/IPC2_PROYECTO3/Proyecto3"
+    if not os.path.exists(directorio_respuestas):
+        os.makedirs(directorio_respuestas)
+    
+    ruta_completa = os.path.join(directorio_respuestas, filename)
+
+    # Escribir el XML en un archivo
+    with open(ruta_completa, 'w', encoding='utf-8') as archivo_xml:
+        archivo_xml.write(xml_str)
+
+    # Opcionalmente, retornar la ruta del archivo para uso posterior
+    return ruta_completa
 
 #Método para procesar el archivo de configuración
 def procesar_config_xml(xml_data):
@@ -288,6 +309,32 @@ def obtener_info_estudiante():
     }
     return jsonify(info_estudiante)
 
+def guardar_datos():
+    data = {
+        'clientes': clientes,
+        'bancos': bancos,
+        'transacciones': transacciones,
+        'pagos': pagos
+    }
+    with open('data.json', 'w') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def cargar_datos():
+    global clientes, bancos, transacciones, pagos
+    try:
+        with open('data.json', 'r') as f:
+            data = json.load(f)
+            clientes = data['clientes']
+            bancos = data['bancos']
+            transacciones = data['transacciones']
+            pagos = data['pagos']
+    except (IOError, ValueError):
+        clientes = {}
+        bancos = {}
+        transacciones = []
+        pagos = []
+
+cargar_datos()  # Cargar datos al iniciar la aplicación
 
 # Rutas adicionales aquí...
 if __name__ == '__main__':
