@@ -39,15 +39,15 @@ def cargar_configuracion(request):
 
 @csrf_exempt  # Desactivar la protección CSRF si estás enviando el formulario a un dominio diferente (Flask)
 def cargar_transacciones(request):
-    if request.method == 'POST' and request.FILES['archivo_transacciones']:
+    if request.method == 'POST' and request.FILES.get('archivo_transacciones'):
         archivo = request.FILES['archivo_transacciones']
 
-        # Aquí deberías definir la URL del endpoint en tu backend de Flask que procesará el archivo de transacciones
+        # URL del endpoint de Flask que maneja la carga de transacciones
         flask_url = 'http://127.0.0.1:8000/cargar-transacciones'
         
         try:
-            # Prepara los archivos para la solicitud
-            files = {'archivo_transacciones': archivo}
+            # Prepara el archivo para la solicitud
+            files = {'archivo_transacciones': (archivo.name, archivo, archivo.content_type)}
 
             # Hacer una solicitud POST al backend de Flask
             response = requests.post(flask_url, files=files)
@@ -59,7 +59,7 @@ def cargar_transacciones(request):
                 return HttpResponse("Archivo de transacciones cargado y procesado correctamente.")
             else:
                 # Si hubo un problema, puedes enviar un mensaje de error
-                return HttpResponse("Hubo un error al procesar el archivo de transacciones.", status=500)
+                return HttpResponse("Hubo un error al procesar el archivo de transacciones.", status=response.status_code)
         except requests.exceptions.RequestException as e:
             # Maneja excepciones que puedan ocurrir durante la solicitud a Flask
             return HttpResponse("Error al conectarse con el servicio de backend.", status=500)
@@ -67,6 +67,7 @@ def cargar_transacciones(request):
         # Si no es un POST o no se ha subido archivo, puedes decidir qué hacer
         # Por ejemplo, mostrar el formulario de carga o enviar un mensaje de error
         return render(request, 'Banca.html', {'error': 'Debes subir un archivo.'})
+
 
 @csrf_exempt
 def resetear_datos(request):

@@ -17,11 +17,12 @@
     </form>
     <br><br>
     <!-- Formulario para cargar archivo de transacciones -->
-    <form method="post" action="{% url 'cargar_transacciones' %}" enctype="multipart/form-data">
+    <form action="{% url 'cargar_transacciones' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="file" name="archivo_transacciones" required>
         <button type="submit">Cargar Transacciones</button>
     </form>
+    
     <br><br>
     <form action="{% url 'resetear_datos' %}" method="post">
         {% csrf_token %}

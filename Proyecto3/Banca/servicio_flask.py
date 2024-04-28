@@ -36,23 +36,61 @@ def cargar_configuracion():
 
 @app.route('/cargar-transacciones', methods=['POST'])
 def cargar_transacciones():
-    xml_data = request.data
-    resultado = procesar_transac_xml(xml_data)
-    print(transacciones)  # Ver los datos de transacciones después de procesar
-    respuesta_xml = generar_respuesta_transac_xml(resultado)
-    return respuesta_xml, 200, {'Content-Type': 'application/xml'}
+    try:
+        # Verificar que el archivo fue proporcionado
+        if 'archivo_transacciones' not in request.files:
+            return jsonify({'error': 'No se encontró el archivo de transacciones.'}), 400
+        archivo = request.files['archivo_transacciones']
+        if archivo.filename == '':
+            return jsonify({'error': 'No se seleccionó archivo.'}), 400
 
-def generar_respuesta_transac_xml(resultado):
+        # Leer el contenido del archivo
+        xml_data = archivo.read()
+        if not xml_data:
+            return jsonify({'error': 'El archivo está vacío.'}), 400
+
+        # Procesar el archivo XML
+        resultado = procesar_transac_xml(xml_data)
+        ruta_archivo = generar_y_guardar_respuesta_transac_xml(resultado)
+        
+        return jsonify({'archivo_guardado': ruta_archivo}), 200
+    except Exception as e:
+        app.logger.error(f'Error al cargar transacciones: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
+def generar_y_guardar_respuesta_transac_xml(resultado, filename="respuesta_transacciones.xml"):
+    # Crear el elemento raíz XML
     respuesta = ET.Element('transacciones')
+
+    # Agregar subelementos para facturas
     facturas = ET.SubElement(respuesta, 'facturas')
     ET.SubElement(facturas, 'nuevasFacturas').text = str(resultado['nuevas_facturas'])
     ET.SubElement(facturas, 'facturasDuplicadas').text = str(resultado['facturas_duplicadas'])
     ET.SubElement(facturas, 'facturasConError').text = str(resultado['facturas_con_error'])
     
+    # Agregar subelementos para pagos
     pagos = ET.SubElement(respuesta, 'pagos')
     ET.SubElement(pagos, 'nuevosPagos').text = str(resultado['nuevos_pagos'])
     ET.SubElement(pagos, 'pagosDuplicados').text = str(resultado['pagos_duplicados'])
     ET.SubElement(pagos, 'pagosConError').text = str(resultado['pagos_con_error'])
+
+    # Convertir el árbol XML a una cadena
+    xml_str = ET.tostring(respuesta, encoding='utf8', method='xml').decode('utf8')
+
+    # Definir la ruta donde se guardará el archivo
+    directorio_respuestas = "C:/Users/estua/OneDrive/Documentos/IPC/IPC2_PROYECTO3/Proyecto3"
+    if not os.path.exists(directorio_respuestas):
+        os.makedirs(directorio_respuestas)
+    
+    ruta_completa = os.path.join(directorio_respuestas, filename)
+
+    # Escribir el XML en un archivo
+    with open(ruta_completa, 'w', encoding='utf-8') as archivo_xml:
+        archivo_xml.write(xml_str)
+
+    # Opcionalmente, retornar la ruta del archivo para uso posterior
+    return ruta_completa
 
     return ET.tostring(respuesta, encoding='utf8', method='xml').decode('utf8')
 
