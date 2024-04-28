@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<config>
+    <clientes>
+
+        <cliente>
+            <NIT> 9202783-4 </NIT>
+            <nombre> Marcos Rosas </nombre>
+        </cliente>  
+
+        <cliente>
+            <NIT> 1102883-1 </NIT>
+            <nombre> Nicole Granados </nombre>
+        </cliente>
+    
+    </clientes>
+    <bancos>
+
+        <banco>
+            <codigo> 18 </codigo>
+            <nombre> Banrural </nombre>
+        </banco> 
+        <banco>
+            <codigo> 23 </codigo>
+            <nombre> Banco Agromercantil </nombre>
+        </banco>
+
+    </bancos>
+</config>

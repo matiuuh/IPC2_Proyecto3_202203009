@@ -15,10 +15,22 @@ pagos = []
 
 @app.route('/cargar-configuracion', methods=['POST'])
 def cargar_configuracion():
-    xml_data = request.data
-    resultado = procesar_config_xml(xml_data)
-    respuesta_xml = generar_respuesta_config_xml(resultado)
-    return respuesta_xml, 200, {'Content-Type': 'application/xml'}
+    try:
+        # Asegúrate de utilizar request.files para archivos cargados
+        if 'archivo_configuracion' not in request.files:
+            return jsonify({'error': 'No se encontró el archivo de configuración.'}), 400
+        archivo = request.files['archivo_configuracion']
+        if archivo.filename == '':
+            return jsonify({'error': 'No se seleccionó archivo.'}), 400
+        if archivo:
+            xml_data = archivo.read()
+            resultado = procesar_config_xml(xml_data)
+            respuesta_xml = generar_respuesta_config_xml(resultado)
+            return respuesta_xml, 200, {'Content-Type': 'application/xml'}
+    except Exception as e:
+        app.logger.error(f'Error al cargar configuración: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/cargar-transacciones', methods=['POST'])
 def cargar_transacciones():
