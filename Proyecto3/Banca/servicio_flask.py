@@ -235,6 +235,7 @@ def procesar_transac_xml(xml_data):
         except Exception as e:
             facturas_con_error += 1
 
+
     # Procesar pagos
     for elemento_pago in root.findall('pagos/pago'):
         try:

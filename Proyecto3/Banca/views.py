@@ -88,27 +88,26 @@ def resetear_datos(request):
         return HttpResponse("Método no permitido", status=405)
 
 def consultar_estado_de_cuenta(request):
-    nit_cliente = request.GET.get('nit_cliente')
-    if nit_cliente:
-        try:
-            # URL del endpoint de Flask que retorna el estado de cuenta basado en el NIT
-            flask_url = f'http://127.0.0.1:8000/estado-cuenta/{nit_cliente}'
-            # Hacer la solicitud GET al servidor Flask
-            response = requests.get(flask_url)
+    if request.method == 'GET' and 'nit_cliente' in request.GET:
+        nit_cliente = request.GET['nit_cliente']
+        flask_url = f'http://127.0.0.1:8000/estado-cuenta/{nit_cliente}'
 
-            # Verificar si la solicitud fue exitosa
+        try:
+            response = requests.get(flask_url)
             if response.status_code == 200:
-                # Convertir la respuesta a JSON y enviarla de vuelta al cliente
+                # Convertir la respuesta a JSON y asignar a una variable
                 estado_cuenta = response.json()
+                
+                # Aquí puedes añadir cualquier manipulación adicional si es necesario
+                # Por ejemplo, podrías agregar lógica adicional basada en el contenido de estado_cuenta
+
                 return JsonResponse(estado_cuenta)
             else:
-                # Manejar respuestas que no son exitosas
-                return HttpResponse("No se pudo obtener el estado de cuenta.", status=response.status_code)
+                return HttpResponse("Error al obtener el estado de cuenta.", status=response.status_code)
         except requests.exceptions.RequestException as e:
-            # Manejar excepciones de la solicitud, como problemas de red
-            return HttpResponse("Error al conectarse con el servicio de backend.", status=500)
+            return HttpResponse("Error de conexión con el servidor de Flask.", status=500)
     else:
-        return HttpResponse("Debe proporcionar un NIT.", status=400)
+        return HttpResponse("Método no permitido", status=405)
 
 def consultar_ingresos(request):
     mes = request.GET.get('mes')
