@@ -8,6 +8,9 @@ from datetime import datetime
 import os
 from flask import Flask, jsonify, request, send_file
 from reportlab.pdfgen import canvas
+import re
+from datetime import datetime
+from xml.etree.ElementTree import ElementTree, fromstring
 
 app = Flask(__name__)
 
@@ -164,6 +167,11 @@ def generar_y_guardar_respuesta_config_xml(resultado, filename="respuesta_config
     # Opcionalmente, retornar la ruta del archivo para uso posterior
     return ruta_completa
 
+def validar_nit(nit):
+    # El patrón verifica que el NIT tenga exactamente 7 dígitos, un guión, y un dígito verificador
+    patron_nit = r'^\d{7}-\d$'
+    return re.match(patron_nit, nit) is not None
+
 #Método para procesar el archivo de configuración
 def procesar_config_xml(xml_data):
     tree = ElementTree(fromstring(xml_data))
@@ -181,15 +189,18 @@ def procesar_config_xml(xml_data):
         nit = elemento_cliente.find('NIT').text.strip()
         nombre = elemento_cliente.find('nombre').text.strip()
         
-        if nit in clientes:
-            # Si el cliente ya existe, actualiza la información
-            if clientes[nit]['nombre'] != nombre:
-                clientes[nit]['nombre'] = nombre
-                clientes_actualizados += 1
+        if validar_nit(nit):
+            if nit in clientes:
+                # Si el cliente ya existe, verifica si la información ha cambiado
+                if clientes[nit]['nombre'] != nombre:
+                    clientes[nit]['nombre'] = nombre
+                    clientes_actualizados += 1
+            else:
+                # Si no existe, crea un nuevo cliente
+                clientes[nit] = {'nombre': nombre}
+                clientes_creados += 1
         else:
-            # Si no existe, crea un nuevo cliente
-            clientes[nit] = {'nombre': nombre}
-            clientes_creados += 1
+            print(f"Invalid NIT format: {nit}")
 
     # Procesar bancos
     for elemento_banco in root.findall('bancos/banco'):
@@ -197,7 +208,7 @@ def procesar_config_xml(xml_data):
         nombre = elemento_banco.find('nombre').text.strip()
         
         if codigo in bancos:
-            # Si el banco ya existe, actualiza la información
+            # Si el banco ya existe, verifica si la información ha cambiado
             if bancos[codigo]['nombre'] != nombre:
                 bancos[codigo]['nombre'] = nombre
                 bancos_actualizados += 1
@@ -212,6 +223,7 @@ def procesar_config_xml(xml_data):
         'bancos_creados': bancos_creados,
         'bancos_actualizados': bancos_actualizados,
     }
+
 
     
 #Método para serializar los datos
@@ -239,6 +251,14 @@ def reset_data():
     return jsonify({'message': 'Datos restablecidos a estado inicial'}), 200
 
 #Método para procesar transacción
+def extraer_fechas(texto):
+    patron_fecha = r'\b\d{1,2}/\d{1,2}/\d{4}\b'
+    return re.findall(patron_fecha, texto)
+
+def validar_nit(nit):
+    patron_nit = r'^\d{7}-\d$'
+    return re.match(patron_nit, nit) is not None
+
 def procesar_transac_xml(xml_data):
     tree = ElementTree(fromstring(xml_data))
     root = tree.getroot()
@@ -250,50 +270,55 @@ def procesar_transac_xml(xml_data):
     pagos_duplicados = 0
     pagos_con_error = 0
 
-    # Procesar facturas
-    for elemento_factura in root.findall('facturas/factura'):
+    # Process invoices
+    for factura in root.findall('facturas/factura'):
         try:
-            numero_factura = elemento_factura.find('numeroFactura').text.strip()
-            nit_cliente = elemento_factura.find('NITcliente').text.strip()
-            fecha = elemento_factura.find('fecha').text.strip()
-            valor = float(elemento_factura.find('valor').text.strip())
+            numero_factura = factura.find('numeroFactura').text.strip()
+            nit_cliente = factura.find('NITcliente').text.strip()
+            fecha = factura.find('fecha').text.strip()
+            valor = float(factura.find('valor').text.strip())
 
-            # Verificar si la factura ya existe
-            factura_existente = next((item for item in transacciones if item['numeroFactura'] == numero_factura), None)
-            if factura_existente:
-                facturas_duplicadas += 1
+            if validar_nit(nit_cliente) and extraer_fechas(fecha):
+                # Check if the invoice already exists
+                factura_existente = next((item for item in transacciones if item['numeroFactura'] == numero_factura), None)
+                if factura_existente:
+                    facturas_duplicadas += 1
+                else:
+                    transacciones.append({
+                        'numeroFactura': numero_factura,
+                        'NITcliente': nit_cliente,
+                        'fecha': extraer_fechas(fecha)[0],
+                        'valor': valor
+                    })
+                    facturas_nuevas += 1
             else:
-                transacciones.append({
-                    'numeroFactura': numero_factura,
-                    'NITcliente': nit_cliente,
-                    'fecha': fecha,
-                    'valor': valor
-                })
-                facturas_nuevas += 1
+                facturas_con_error += 1
         except Exception as e:
             facturas_con_error += 1
 
-
-    # Procesar pagos
-    for elemento_pago in root.findall('pagos/pago'):
+    # Process payments
+    for pago in root.findall('pagos/pago'):
         try:
-            codigo_banco = elemento_pago.find('codigoBanco').text.strip()
-            fecha = elemento_pago.find('fecha').text.strip()
-            nit_cliente = elemento_pago.find('NITcliente').text.strip()
-            valor = float(elemento_pago.find('valor').text.strip())
+            codigo_banco = pago.find('codigoBanco').text.strip()
+            fecha_pago = pago.find('fecha').text.strip()
+            nit_cliente_pago = pago.find('NITcliente').text.strip()
+            valor_pago = float(pago.find('valor').text.strip())
 
-            # Verificar si el pago ya existe
-            pago_existente = next((item for item in pagos if item['codigoBanco'] == codigo_banco and item['NITcliente'] == nit_cliente and item['fecha'] == fecha), None)
-            if pago_existente:
-                pagos_duplicados += 1
+            if validar_nit(nit_cliente_pago) and extraer_fechas(fecha_pago):
+                # Check if the payment already exists
+                pago_existente = next((item for item in pagos if item['codigoBanco'] == codigo_banco and item['NITcliente'] == nit_cliente_pago and item['fecha'] == extraer_fechas(fecha_pago)[0]), None)
+                if pago_existente:
+                    pagos_duplicados += 1
+                else:
+                    pagos.append({
+                        'codigoBanco': codigo_banco,
+                        'NITcliente': nit_cliente_pago,
+                        'fecha': extraer_fechas(fecha_pago)[0],
+                        'valor': valor_pago
+                    })
+                    pagos_nuevos += 1
             else:
-                pagos.append({
-                    'codigoBanco': codigo_banco,
-                    'fecha': fecha,
-                    'NITcliente': nit_cliente,
-                    'valor': valor
-                })
-                pagos_nuevos += 1
+                pagos_con_error += 1
         except Exception as e:
             pagos_con_error += 1
 
