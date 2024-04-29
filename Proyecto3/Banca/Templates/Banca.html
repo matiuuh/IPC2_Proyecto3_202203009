@@ -5,6 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banca</title>
     <!-- Estilos y scripts necesarios -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 40px;
+        }
+
+        h1 {
+            color: #0056b3;
+        }
+
+        form {
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box; /* Asegura que padding y border estén incluidos en el width/height */
+        }
+
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+    </style>
 </head>
 <body>
     <h1>Banca Virtual</h1>
@@ -15,7 +55,7 @@
         <input type="file" name="archivo_configuracion" required>
         <button type="submit">Cargar Configuración</button>
     </form>
-    <br><br>
+
     <!-- Formulario para cargar archivo de transacciones -->
     <form action="{% url 'cargar_transacciones' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -23,19 +63,19 @@
         <button type="submit">Cargar Transacciones</button>
     </form>
     
-    <br><br>
     <form action="{% url 'resetear_datos' %}" method="post">
         {% csrf_token %}
         <button type="submit">Resetear Datos</button>
     </form>
-    <br><br>
+
     <form method="get" action="{% url 'consultar_estado_de_cuenta' %}">
         <input type="text" name="nit_cliente" placeholder="Ingresa tu NIT" required>
         <button type="submit">Consultar Estado de Cuenta</button>
     </form>      
-    <br><br>
+
     <form method="get" action="{% url 'consultar_ingresos' %}">
         <select name="mes" required>
+            <option value="">Selecciona un mes</option>
             <option value="01">Enero</option>
             <option value="02">Febrero</option>
             <option value="03">Marzo</option>
@@ -57,12 +97,10 @@
         </select>
         <button type="submit">Consultar Ingresos</button>
     </form>
-    <br><br>
 
-    <!-- Espacio para visualizar la información procesada -->
-    <!-- ... -->
-
-    <!-- Enlaces a otras funcionalidades -->
-    <!-- ... -->
+    <form method="get" action="{% url 'obtener_info_estudiante' %}">
+        <button type="submit">Ayuda</button>
+    </form>
+    
 </body>
 </html>

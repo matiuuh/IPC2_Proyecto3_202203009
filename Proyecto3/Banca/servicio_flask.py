@@ -43,19 +43,27 @@ def crear_pdf_transaccion(xml_data, filename="transaccion.pdf"):
 
 @app.route('/cargar-configuracion', methods=['POST'])
 def cargar_configuracion():
+    xml_data = None
     try:
-        # Asegúrate de utilizar request.files para archivos cargados
-        if 'archivo_configuracion' not in request.files:
-            return jsonify({'error': 'No se encontró el archivo de configuración.'}), 400
-        archivo = request.files['archivo_configuracion']
-        if archivo.filename == '':
-            return jsonify({'error': 'No se seleccionó archivo.'}), 400
-        if archivo:
+        # Intenta obtener el archivo de la carga de archivos
+        if 'archivo_configuracion' in request.files:
+            archivo = request.files['archivo_configuracion']
+            if archivo.filename == '':
+                return jsonify({'error': 'No se seleccionó archivo.'}), 400
             xml_data = archivo.read()
-            resultado = procesar_config_xml(xml_data)
-            ruta_archivo = generar_y_guardar_respuesta_config_xml(resultado)
-            pdf_file_path = crear_pdf_configuracion(xml_data)
-            return jsonify({'archivo_guardado': ruta_archivo}), 200
+        elif request.data:
+            # Si no hay archivos, intenta leer los datos directamente del cuerpo de la petición
+            xml_data = request.data
+
+        if not xml_data:
+            return jsonify({'error': 'No se proporcionaron datos XML válidos.'}), 400
+
+        # Procesa los datos XML
+        resultado = procesar_config_xml(xml_data)
+        ruta_archivo = generar_y_guardar_respuesta_config_xml(resultado)
+        pdf_file_path = crear_pdf_configuracion(xml_data)
+        return jsonify({'archivo_guardado': ruta_archivo, 'pdf_creado': pdf_file_path}), 200
+
     except Exception as e:
         app.logger.error(f'Error al cargar configuración: {str(e)}')
         return jsonify({'error': str(e)}), 500
@@ -63,24 +71,27 @@ def cargar_configuracion():
 
 @app.route('/cargar-transacciones', methods=['POST'])
 def cargar_transacciones():
+    xml_data = None
     try:
-        # Verificar que el archivo fue proporcionado
-        if 'archivo_transacciones' not in request.files:
-            return jsonify({'error': 'No se encontró el archivo de transacciones.'}), 400
-        archivo = request.files['archivo_transacciones']
-        if archivo.filename == '':
-            return jsonify({'error': 'No se seleccionó archivo.'}), 400
+        # Intenta obtener el archivo de la carga de archivos
+        if 'archivo_transacciones' in request.files:
+            archivo = request.files['archivo_transacciones']
+            if archivo.filename == '':
+                return jsonify({'error': 'No se seleccionó archivo.'}), 400
+            xml_data = archivo.read()
+        elif request.data:
+            # Si no hay archivos, intenta leer los datos directamente del cuerpo de la petición
+            xml_data = request.data
 
-        # Leer el contenido del archivo
-        xml_data = archivo.read()
         if not xml_data:
-            return jsonify({'error': 'El archivo está vacío.'}), 400
+            return jsonify({'error': 'No se proporcionaron datos XML válidos.'}), 400
 
-        # Procesar el archivo XML
+        # Procesa los datos XML
         resultado = procesar_transac_xml(xml_data)
         ruta_archivo = generar_y_guardar_respuesta_transac_xml(resultado)
         pdf_file_path = crear_pdf_transaccion(xml_data)
-        return jsonify({'archivo_guardado': ruta_archivo}), 200
+        return jsonify({'archivo_guardado': ruta_archivo, 'pdf_creado': pdf_file_path}), 200
+
     except Exception as e:
         app.logger.error(f'Error al cargar transacciones: {str(e)}')
         return jsonify({'error': str(e)}), 500

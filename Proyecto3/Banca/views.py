@@ -15,10 +15,21 @@ def ver_banca(request):
     years = range(current_year - 10, current_year + 1)  # Últimos 10 años
     return render(request, 'Banca.html', {'years': years})
 
-def tu_vista(request):
-    current_year = datetime.datetime.now().year
-    years = range(current_year - 10, current_year + 1)  # Últimos 10 años
-    return render(request, 'Banca.html', {'years': years})
+def obtener_info_estudiante(request):
+    try:
+        # URL del endpoint de Flask
+        flask_url = 'http://127.0.0.1:8000/info'
+        response = requests.get(flask_url)
+        
+        if response.status_code == 200:
+            # Si la respuesta es exitosa, devolvemos la información como JSON
+            info_estudiante = response.json()
+            return JsonResponse(info_estudiante)
+        else:
+            # Si algo sale mal, devolvemos un error
+            return HttpResponse("No se pudo obtener la información del estudiante.", status=response.status_code)
+    except requests.exceptions.RequestException as e:
+        return HttpResponse("Error de conexión con el servidor de Flask.", status=500)
 
 @csrf_exempt  # Desactivar CSRF si es necesario
 def cargar_configuracion(request):

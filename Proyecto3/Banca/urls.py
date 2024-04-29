@@ -8,4 +8,5 @@ urlpatterns=[
     path('resetear-datos/', views.resetear_datos, name='resetear_datos'),
     path('consultar-estado-cuenta/', views.consultar_estado_de_cuenta, name='consultar_estado_de_cuenta'),
     path('consultar-ingresos/', views.consultar_ingresos, name='consultar_ingresos'),
+    path('info', views.obtener_info_estudiante, name='obtener_info_estudiante'),
 ]
