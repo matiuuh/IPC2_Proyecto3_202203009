@@ -397,7 +397,8 @@ def obtener_pagos():
 def obtener_info_estudiante():
     info_estudiante = {
         'Nombre': 'Mateo Estuardo Diego Noriega',
-        'Carné': '202203009'
+        'Carné': '202203009',
+        'Documentación': 'https://github.com/Matius-Noriega/IPC2_Proyecto3_202203009.git'
     }
     return jsonify(info_estudiante)
 
